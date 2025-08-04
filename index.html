@@ -1,59 +1,113 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Device Verification</title>
-    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-        #status { margin-top: 20px; font-weight: bold; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Device Verification</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #121212;
+      color: white;
+      text-align: center;
+      padding: 30px;
+    }
+    .card {
+      background: #1f1f1f;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      max-width: 400px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 12px 25px;
+      font-size: 16px;
+      background: #28a745;
+      border: none;
+      color: white;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #218838;
+    }
+    .status {
+      margin-top: 25px;
+      font-size: 18px;
+    }
+    .success {
+      color: #00ff88;
+      animation: pop 0.5s ease;
+    }
+    .error {
+      color: #ff4d4d;
+      animation: shake 0.4s ease;
+    }
+    @keyframes pop {
+      0% { transform: scale(0.9); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+  </style>
 </head>
 <body>
-    <h1>Device Verification</h1>
-    <div id="status">Checking your device...</div>
+  <div class="card">
+    <h1>📱 Device Verification</h1>
+    <p>Verify that you're not using multiple Telegram accounts on the same device.</p>
+    <button id="verifyBtn">✅ Verify Device</button>
+    <div class="status" id="statusText"></div>
+  </div>
 
-    <script>
-        const urlParams = new URLSearchParams(window.location.search);
-        const userId = urlParams.get('user_id');
-        const statusEl = document.getElementById('status');
+  <script>
+    const verifyBtn = document.getElementById("verifyBtn");
+    const statusText = document.getElementById("statusText");
 
-        if (!userId) {
-            statusEl.innerText = "❌ Error: User ID missing";
-            throw new Error("User ID not found in URL");
+    verifyBtn.addEventListener("click", async () => {
+      verifyBtn.disabled = true;
+      statusText.textContent = "🔍 Scanning your device...";
+
+      const fp = await FingerprintJS.load();
+      const result = await fp.get();
+      const fingerprint = result.visitorId;
+
+      try {
+        const res = await fetch("http://brownglider.onpella.app/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fingerprint }),
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.status === "success") {
+          statusText.innerHTML = "✅ <strong>Device Verified Successfully!</strong>";
+          statusText.className = "status success";
+          Telegram.WebApp.close();  // Close WebApp
+        } else if (data.status === "duplicate") {
+          statusText.innerHTML = "❌ <strong>This device is already used.</strong>";
+          statusText.className = "status error";
+        } else {
+          throw new Error("Unexpected response");
         }
-
-        // Collect fingerprint
-        FingerprintJS.load()
-            .then(fp => fp.get())
-            .then(result => {
-                statusEl.innerText = "Sending data to server...";
-                return fetch('https://your-flask-backend.herokuapp.com/verify', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        user_id: userId,
-                        fingerprint: result.visitorId,
-                        device_info: {
-                            os: navigator.platform,
-                            screen: `${screen.width}x${screen.height}`,
-                            browser: navigator.userAgent
-                        }
-                    })
-                });
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    statusEl.innerText = "✅ Verification Successful!";
-                    setTimeout(() => window.close(), 2000);
-                } else {
-                    statusEl.innerText = "❌ Failed: " + (data.error || "Unknown error");
-                }
-            })
-            .catch(error => {
-                statusEl.innerText = "⚠️ Error: " + error.message;
-                console.error(error);
-            });
-    </script>
+      } catch (err) {
+        statusText.innerHTML = "⚠️ <strong>Error verifying device.</strong>";
+        statusText.className = "status error";
+      } finally {
+        verifyBtn.disabled = false;
+      }
+    });
+  </script>
 </body>
 </html>
