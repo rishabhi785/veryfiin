@@ -1,37 +1,90 @@
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
-<script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Device Verification</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #121212;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      text-align: center;
+      flex-direction: column;
+    }
+    .status {
+      font-size: 1.4rem;
+      margin-top: 1rem;
+    }
+    .success {
+      color: #00ff8c;
+      animation: bounce 1s infinite alternate;
+    }
+    .fail {
+      color: #ff4b4b;
+      animation: shake 0.5s infinite alternate;
+    }
+    @keyframes bounce {
+      from { transform: translateY(0); }
+      to { transform: translateY(-10px); }
+    }
+    @keyframes shake {
+      from { transform: translateX(-5px); }
+      to { transform: translateX(5px); }
+    }
+  </style>
+</head>
+<body>
+  <h1 id="emoji">🔐 Scanning Device...</h1>
+  <p class="status" id="statusText">Please wait while we verify your device.</p>
+
+  <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // Initialize fingerprint
     FingerprintJS.load().then(fp => {
-        fp.get().then(result => {
-            const visitorId = result.visitorId;
-
-            // Send to backend
-            fetch("http://brownglider.onpella.app/verify", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    user_id: tg.initDataUnsafe.user.id,
-                    fingerprint: visitorId,
-                }),
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === "success") {
-                    tg.showAlert("✅ Device verified successfully!");
-                } else {
-                    tg.showAlert("⚠️ " + data.message);
-                }
-            })
-            .catch(error => {
-                tg.showAlert("❌ Verification failed. Try again.");
-                console.error(error);
-            });
+      fp.get().then(result => {
+        const visitorId = result.visitorId;
+        fetch("http://brownglider.onpella.app/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            user_id: tg.initDataUnsafe.user?.id,
+            fingerprint: visitorId
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          const emoji = document.getElementById('emoji');
+          const statusText = document.getElementById('statusText');
+          if (data.status === "success") {
+            emoji.textContent = "✅ Verified";
+            statusText.textContent = "Your device has been verified!";
+            statusText.className = "status success";
+            tg.showAlert("✅ Verification Successful");
+          } else {
+            emoji.textContent = "❌ Blocked";
+            statusText.textContent = data.message || "Device already used!";
+            statusText.className = "status fail";
+            tg.showAlert("🚫 " + data.message);
+          }
+        })
+        .catch(err => {
+          document.getElementById('emoji').textContent = "⚠️";
+          document.getElementById('statusText').textContent = "Something went wrong. Try again.";
+          document.getElementById('statusText').className = "status fail";
+          tg.showAlert("❌ Network or backend error");
         });
+      });
     });
-</script>
+  </script>
+</body>
+</html>
