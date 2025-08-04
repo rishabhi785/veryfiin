@@ -49,7 +49,6 @@
       background-color: #4752c4;
     }
 
-    /* Loader */
     .loader {
       border: 6px solid #f3f3f3;
       border-top: 6px solid #5865F2;
@@ -92,7 +91,7 @@
       const result = await fp.get();
       const fingerprint = result.visitorId;
 
-      const res = await fetch("https://your-backend-url.com/api/verify", {
+      const res = await fetch("http://shocking-pinksquirrel.onpella.app/api/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId, fingerprint })
