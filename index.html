@@ -1,125 +1,65 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Device Verification</title>
-  <script src="https://openfpcdn.io/fingerprintjs/v3"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: sans-serif;
+      background: #1e293b;
+      color: #fff;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      background: linear-gradient(to right, #e0eafc, #cfdef3);
-      transition: background 0.4s ease-in-out;
-    }
-    .box {
-      background: white;
-      padding: 40px 50px;
-      border-radius: 20px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-      text-align: center;
-      animation: fadeIn 0.5s ease;
-    }
-    h2 {
-      color: #333;
-      margin-bottom: 10px;
-    }
-    p {
-      color: #555;
-      margin-top: 0;
+      height: 100vh;
     }
     .btn {
-      margin-top: 20px;
-      padding: 12px 30px;
-      background-color: #5865F2;
+      background: #10b981;
+      padding: 14px 28px;
+      font-size: 16px;
       color: white;
       border: none;
       border-radius: 12px;
-      font-size: 16px;
       cursor: pointer;
-      text-decoration: none;
-      transition: background 0.3s;
+      margin-top: 20px;
     }
-    .btn:hover {
-      background-color: #4752c4;
-    }
-
-    .loader {
-      border: 6px solid #f3f3f3;
-      border-top: 6px solid #5865F2;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg);}
-      100% { transform: rotate(360deg);}
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.95);}
-      to { opacity: 1; transform: scale(1);}
+    #status {
+      margin-top: 25px;
     }
   </style>
 </head>
 <body>
-  <div class="box" id="mainBox">
-    <h2>🔍 Verifying your device...</h2>
-    <div class="loader"></div>
-    <p>Please wait while we verify your identity.</p>
-  </div>
+  <h1>🔐 Device Verification</h1>
+  <p>Tap the button to verify your device.</p>
+  <button class="btn" onclick="verifyDevice()">✅ Verify Now</button>
+  <div id="status">Waiting...</div>
 
+  <script src="https://openfpcdn.io/fingerprintjs/v3"></script>
   <script>
-    async function verifyUser() {
-      const params = new URLSearchParams(window.location.search);
-      const userId = params.get("user_id");
-
-      if (!userId) {
-        alert("Missing user ID.");
-        return;
-      }
-
+    async function verifyDevice() {
+      document.getElementById("status").innerText = "⏳ Collecting fingerprint...";
       const fp = await FingerprintJS.load();
       const result = await fp.get();
-      const fingerprint = result.visitorId;
+      const visitorId = result.visitorId;
 
-      const res = await fetch("http://shocking-pinksquirrel.onpella.app/api/verify", {
+      document.getElementById("status").innerText = "📡 Sending to server...";
+
+      const response = await fetch("https://your-replit-url.repl.co/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: userId, fingerprint })
+        body: JSON.stringify({ fingerprint: visitorId })
       });
 
-      const data = await res.json();
+      const data = await response.json();
 
-      const box = document.getElementById("mainBox");
-
-      if (data.success) {
-        box.innerHTML = `
-          <h2>✅ Verified Successfully!</h2>
-          <p>Redirecting to bot...</p>
-          <div class="loader"></div>
-        `;
-        setTimeout(() => {
-          window.location.href = "https://t.me/RedeemLoots_bot?start=verified";
-        }, 2000);
+      if (data.status === "success") {
+        document.getElementById("status").innerHTML = "✅ <b>Verified Successfully!</b>";
       } else {
-        box.innerHTML = `
-          <h2>❌ Verification Failed</h2>
-          <p>This device has already been used.</p>
-          <a class="btn" href="https://t.me/RedeemLoots_bot">Return to Bot</a>
-        `;
+        document.getElementById("status").innerHTML = "❌ <b>Verification Failed (Already Used)</b>";
       }
     }
-
-    verifyUser();
   </script>
 </body>
 </html>
