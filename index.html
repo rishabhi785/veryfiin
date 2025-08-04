@@ -2,651 +2,473 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
     <title>Device Verification</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            background-color: #121a23; /* Dark background */
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: #fff;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
             text-align: center;
+            overflow-x: hidden;
         }
 
         .container {
             display: flex;
             flex-direction: column;
             align-items: center;
+            max-width: 400px;
+            padding: 20px;
         }
 
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+            width: 100%;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Loading Screen Styles */
         .loader-container {
             width: 120px;
             height: 120px;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .device-loader {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .device-circle {
+            width: 80px;
+            height: 80px;
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            border-top: 3px solid #4fc3f7;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .device-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(45deg, #4fc3f7, #29b6f6);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scan-line {
+            width: 60%;
+            height: 2px;
+            background: #fff;
+            animation: scanning 2s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes scanning {
+            0%, 100% { opacity: 0.3; transform: scaleX(0.5); }
+            50% { opacity: 1; transform: scaleX(1); }
         }
 
         h1 {
-            font-size: 24px;
-            margin: 10px 0 5px;
+            font-size: 28px;
+            margin: 20px 0 10px;
+            font-weight: 600;
         }
 
         .progress-bar {
-            width: 80%;
-            height: 5px;
+            width: 300px;
+            height: 6px;
             background: rgba(255, 255, 255, 0.2);
-            border-radius: 5px;
+            border-radius: 3px;
             overflow: hidden;
-            margin: 15px auto;
+            margin: 20px auto;
         }
 
         .progress {
             height: 100%;
             width: 0;
-            background: #3a9bdc; /* Matching blue */
-            animation: progressAnim 3s linear forwards;
+            background: linear-gradient(90deg, #4fc3f7, #29b6f6);
+            animation: progressAnimation 3s ease-out forwards;
         }
 
-        @keyframes progressAnim {
-            0% { width: 0; }
+        @keyframes progressAnimation {
+            0% { width: 0%; }
             100% { width: 100%; }
         }
 
         .message {
-            color: #ccc;
-            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            margin: 10px 0;
+            animation: pulse 2s ease-in-out infinite;
         }
 
-        .screen {
-            display: none; /* Hide all screens by default */
-            flex-direction: column;
+        @keyframes pulse {
+            0%, 100% { opacity: 0.8; }
+            50% { opacity: 1; }
+        }
+
+        /* Success/Error Screen Styles */
+        .status-icon {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
             align-items: center;
             justify-content: center;
-            height: 100vh;
-            width: 100%;
+            margin-bottom: 30px;
+            position: relative;
+            animation: scaleIn 0.6s ease-out;
         }
 
-        .active {
-            display: flex; /* Show only the active screen */
+        @keyframes scaleIn {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .success-icon {
+            background: linear-gradient(135deg, #4caf50, #66bb6a);
+        }
+
+        .error-icon {
+            background: linear-gradient(135deg, #f44336, #ef5350);
+        }
+
+        .already-verified-icon {
+            background: linear-gradient(135deg, #2196f3, #42a5f5);
+        }
+
+        .status-icon svg {
+            width: 50px;
+            height: 50px;
+            color: white;
+        }
+
+        .status-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .status-message {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.5;
+            margin-bottom: 30px;
+            max-width: 300px;
         }
 
         .button {
             display: inline-block;
-            margin-top: 15px;
-            padding: 12px 25px;
-            background-color: #3a9bdc; /* Same blue as logo */
+            padding: 14px 30px;
+            background: linear-gradient(135deg, #4fc3f7, #29b6f6);
             color: #fff;
             text-decoration: none;
             border-radius: 25px;
             font-size: 16px;
-            font-weight: bold;
-            transition: 0.3s ease;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(79, 195, 247, 0.4);
         }
 
         .button:hover {
-            background-color: #2c7fb3; /* Darker blue on hover */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 195, 247, 0.6);
         }
 
-        .button-cancel {
-            background-color: #dc3a3a; /* Red color for cancel */
+        .button-error {
+            background: linear-gradient(135deg, #f44336, #ef5350);
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
         }
 
-        .button-cancel:hover {
-            background-color: #b32c2c; /* Darker red on hover */
+        .button-error:hover {
+            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.6);
         }
 
-        /* Device loader styles */
-        .device {
-            position: relative;
-            width: 4em;
-            height: 4em;
-            transform: scale(1.5);
-        }
-        .device__a, .device__a-1, .device__a-2, .device__b, .device__c, .device__d, .device__e, .device__f, .device__g {
-            animation: device-a 3s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-            position: absolute;
-            transition: background-color 0.3s, box-shadow 0.3s;
-        }
-        .device__a, .device__d, .device__e {
-            background-color: hsl(223, 10%, 70%);
-            box-shadow: 0 0 0 0.25em inset hsl(223, 10%, 90%);
-        }
-        .device__a {
-            border-radius: 0.375em;
-            top: 0;
-            width: 4em;
-            height: 2.5em;
-            z-index: 1;
-        }
-        .device__a-1, .device__a-2 {
-            visibility: hidden;
-        }
-        .device__a-1 {
-            animation-name: device-a-1;
-            top: 2.25em;
-            left: 1.5em;
-            width: 1em;
-            height: 0.25em;
-        }
-        .device__a-2 {
-            animation-name: device-a-2;
-            top: 0.625em;
-            right: 0;
-            width: 0.25em;
-            height: 0.75em;
-        }
-        .device__a-1, .device__a-2, .device__b, .device__c, .device__f, .device__g {
-            background-color: hsl(223, 10%, 90%);
-            border-radius: 0.125em;
-        }
-        .device__b {
-            animation-name: device-b;
-            top: 2.25em;
-            left: 1.875em;
-            width: 0.25em;
-            height: 1em;
-        }
-        .device__c {
-            animation-name: device-c;
-            top: 3em;
-            left: 1em;
-            width: 2em;
-            height: 0.25em;
-        }
-        .device__d, .device__e {
-            left: 1.25em;
-            width: 1.5em;
-            height: 0.875em;
-            visibility: hidden;
-        }
-        .device__d {
-            animation-name: device-d;
-            border-radius: 0.375em 0.375em 0 0;
-            top: 0.75em;
-        }
-        .device__e {
-            animation-name: device-e;
-            border-radius: 0 0 0.375em 0.375em;
-            top: 1.625em;
-        }
-        .device__f, .device__g {
-            filter: blur(0.375em);
-            bottom: 0;
-            height: 0.25em;
-        }
-        .device__f {
-            animation-name: device-f;
-            opacity: 0.5;
-            left: 1em;
-            width: 2em;
-        }
-        .device__g {
-            animation-name: device-g;
-            opacity: 0;
-            left: 0;
-            width: 4em;
+        .button-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            margin-top: 10px;
+            box-shadow: 0 4px 15px rgba(255, 255, 255, 0.1);
         }
 
-        /* Success and cancel image styles */
-        .success-image, .cancel-image {
-            width: 120px;
-            height: 120px;
-            object-fit: contain;
-            margin-bottom: 20px;
+        .button-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2);
         }
 
-        /* Animations */
-        @keyframes device-a {
-            from, to {
-                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
-                left: 0;
-                width: 4em;
-                height: 2.5em;
-                transform: translateY(0);
-            }
-            12.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                left: 0;
-                width: 4em;
-                height: 2.5em;
-                transform: translateY(1.5em);
-            }
-            25% {
-                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
-                left: 0;
-                width: 4em;
-                height: 2.5em;
-                transform: translateY(0.375em);
-            }
-            37.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                left: 0;
-                width: 4em;
-                height: 2.5em;
-                transform: translateY(1.5em);
-            }
-            50% {
-                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
-                left: 1em;
-                width: 2em;
-                height: 3em;
-                transform: translateY(0.125em);
-            }
-            62.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                left: 1em;
-                width: 2em;
-                height: 3em;
-                transform: translateY(1em);
-            }
-            75% {
-                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
-                left: 1em;
-                width: 2em;
-                height: 2em;
-                transform: translateY(0.625em);
-            }
-            87.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                left: 1em;
-                width: 2em;
-                height: 2em;
-                transform: translateY(1.375em);
-            }
+        .loading-dots {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
         }
-        @keyframes device-a-1 {
-            from {
-                animation-timing-function: steps(1, end);
-                left: 1.5em;
-                width: 1em;
-                transform: translateY(0);
-                visibility: hidden;
-            }
-            12.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                left: 1.5em;
-                width: 1em;
-                transform: translateY(0);
-                visibility: visible;
-            }
-            25%, 37.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                left: 1.5em;
-                width: 1em;
-                transform: translateY(-0.5em);
-                visibility: visible;
-            }
-            50%, 62.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                left: 0.875em;
-                width: 0.25em;
-                transform: translateY(0);
-                visibility: visible;
-            }
-            75%, to {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                left: 0.875em;
-                width: 0.25em;
-                transform: translateY(-0.5em);
-                visibility: hidden;
-            }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: #4fc3f7;
+            border-radius: 50%;
+            margin: 0 4px;
+            animation: loadingDots 1.4s ease-in-out infinite both;
         }
-        @keyframes device-a-2 {
-            from {
-                animation-timing-function: steps(1, end);
-                transform: translate(0, 0.375em);
-                visibility: hidden;
-            }
-            62.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                transform: translate(0, 0.375em);
-                visibility: visible;
-            }
-            75%, 87.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                transform: translate(0.375em, 0);
-                visibility: visible;
-            }
-            to {
-                transform: translate(0, 0.25em);
-                visibility: visible;
-            }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes loadingDots {
+            0%, 80%, 100% { transform: scale(0); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
         }
-        @keyframes device-b {
-            from, to {
-                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
-                transform: translateY(0);
-                visibility: visible;
-            }
-            10%, 12.5% {
-                animation-timing-function: steps(1, start);
-                transform: translateY(0.75em);
-                visibility: visible;
-            }
-            25% {
-                animation-timing-function: steps(1, start);
-                top: 2.25em;
-                left: 1.875em;
-                transform: translateY(0.75em);
-                visibility: hidden;
-            }
-            87.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                transform: translateY(0.75em);
-                visibility: hidden;
-            }
-        }
-        @keyframes device-c {
-            from, to {
-                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
-                transform: translateY(0);
-                visibility: visible;
-                width: 2em;
-            }
-            10%, 12.5% {
-                animation-timing-function: steps(1, start);
-                transform: translateY(0.75em);
-                visibility: visible;
-                width: 2em;
-            }
-            25% {
-                animation-timing-function: steps(1, start);
-                top: 3em;
-                left: 1em;
-                width: 2em;
-                transform: translateY(0.75em);
-                visibility: hidden;
-                width: 2em;
-            }
-            87.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                left: 1.5em;
-                transform: translateY(0.75em);
-                visibility: hidden;
-                width: 1em;
-            }
-        }
-        @keyframes device-d {
-            from {
-                animation-timing-function: steps(1, end);
-                transform: translateY(0.25em);
-                visibility: hidden;
-            }
-            62.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                transform: translateY(0.25em);
-                visibility: visible;
-            }
-            75% {
-                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
-                transform: translateY(-0.75em);
-            }
-            87.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                transform: translateY(0);
-            }
-            to {
-                transform: translateY(-0.75em);
-            }
-        }
-        @keyframes device-e {
-            from {
-                animation-timing-function: steps(1, end);
-                transform: translateY(1.5em);
-                visibility: hidden;
-            }
-            62.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                transform: translateY(1.5em);
-                visibility: visible;
-            }
-            75% {
-                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
-                transform: translateY(0.75em);
-            }
-            87.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                transform: translateY(1.5em);
-            }
-            to {
-                transform: translateY(0);
-            }
-        }
-        @keyframes device-f {
-            from {
-                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
-                filter: blur(0.375em);
-            }
-            12.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                filter: blur(0.1875em);
-                opacity: 0.5;
-            }
-            25%, to {
-                filter: blur(0.375em);
-                opacity: 0;
-            }
-        }
-        @keyframes device-g {
-            from, 12.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                background-color: hsl(223, 10%, 90%);
-                filter: blur(0.1875em);
-                opacity: 0;
-            }
-            25% {
-                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
-                background-color: hsl(223, 10%, 90%);
-                filter: blur(0.375em);
-                opacity: 0.5;
-            }
-            37.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                filter: blur(0.1875em);
-                opacity: 0.5;
-                left: 0;
-                width: 4em;
-            }
-            50%, 75%, to {
-                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
-                filter: blur(0.375em);
-                opacity: 0.5;
-                left: 1em;
-                width: 2em;
-            }
-            62.5%, 87.5% {
-                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
-                filter: blur(0.1875em);
-                opacity: 0.5;
-                left: 1em;
-                width: 2em;
-            }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .container { padding: 15px; }
+            h1 { font-size: 24px; }
+            .progress-bar { width: 250px; }
+            .status-icon { width: 80px; height: 80px; }
+            .status-icon svg { width: 40px; height: 40px; }
         }
     </style>
 </head>
 
 <body>
-    <!-- First Page (Loading) -->
-    <div class="screen progress-screen active">
+    <!-- Loading Screen -->
+    <div class="screen loading-screen active">
         <div class="container">
             <div class="loader-container">
-                <div class="device">
-                    <div class="device__a">
-                        <div class="device__a-1"></div>
-                        <div class="device__a-2"></div>
+                <div class="device-loader">
+                    <div class="device-circle"></div>
+                    <div class="device-inner">
+                        <div class="scan-line"></div>
                     </div>
-                    <div class="device__b"></div>
-                    <div class="device__c"></div>
-                    <div class="device__d"></div>
-                    <div class="device__e"></div>
-                    <div class="device__f"></div>
-                    <div class="device__g"></div>
                 </div>
             </div>
             <h1>Device Verification</h1>
             <div class="progress-bar">
                 <div class="progress"></div>
             </div>
-            <div class="message">Scanning your device...</div>
+            <div class="message" id="loadingMessage">Scanning your device...</div>
+            <div class="loading-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
         </div>
     </div>
 
-    <!-- Second Page (Success) -->
-    <div class="screen success-screen" id="successScreen">
+    <!-- Success Screen -->
+    <div class="screen success-screen">
         <div class="container">
-            <div class="loader-container">
-                <img src="https://i.ibb.co.com/9HK2bk1t/1000004210-removebg-preview.png" alt="Success" class="success-image">
+            <div class="status-icon success-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
             </div>
             <h1>Device Verification</h1>
-            <p id="successTitle">Verification Successful</p>
-            <div class="message" id="successMessage">Your device has been verified.</div>
-            <a href="#" class="button" id="continueBtn">Continue to Bot</a>
+            <div class="status-title" id="successTitle">Verification Successful</div>
+            <div class="status-message" id="successMessage">Your device has been verified successfully. You can now continue to use the bot.</div>
+            <button class="button" onclick="closeTelegramWebApp()">Continue to Bot</button>
         </div>
     </div>
 
-    <!-- Third Page (Cancel) -->
-    <div class="screen cancel-screen">
+    <!-- Already Verified Screen -->
+    <div class="screen already-verified-screen">
         <div class="container">
-            <div class="loader-container">
-                <img src="https://i.ibb.co/sJyRRXHk/1000004216-removebg-preview.png" alt="Cancel" class="cancel-image">
+            <div class="status-icon already-verified-icon">
+                <svg fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M10,17L6,13L7.41,11.59L10,14.17L16.59,7.58L18,9L10,17Z"/>
+                </svg>
             </div>
             <h1>Device Verification</h1>
-            <p>Verification Failed</p>
-            <div class="message" id="errorMessage">The verification process was interrupted.</div>
-            <a href="#" class="button button-cancel" id="tryAgainBtn">Continue To Bot</a>
+            <div class="status-title">You're Already Verified</div>
+            <div class="status-message">Your account is already verified. No additional verification is needed.</div>
+            <button class="button" onclick="closeTelegramWebApp()">Continue to Bot</button>
+        </div>
+    </div>
+
+    <!-- Error Screen -->
+    <div class="screen error-screen">
+        <div class="container">
+            <div class="status-icon error-icon">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </div>
+            <h1>Device Verification</h1>
+            <div class="status-title">Verification Failed</div>
+            <div class="status-message" id="errorMessage">The verification process encountered an error.</div>
+            <button class="button button-error" onclick="closeTelegramWebApp()">Continue to Bot</button>
+            <button class="button button-secondary" onclick="retryVerification()">Try Again</button>
         </div>
     </div>
 
     <script>
+        // Configuration - Replace with your backend URL
+        const BACKEND_URL = 'https://your-backend-domain.com'; // Change this to your Pella.app backend URL
+        
+        let currentScreen = 'loading';
+        const loadingMessages = [
+            'Scanning your device...',
+            'Analyzing hardware fingerprint...',
+            'Validating security credentials...',
+            'Finalizing verification...'
+        ];
+
         document.addEventListener('DOMContentLoaded', async function() {
-            const params = new URLSearchParams(window.location.search);
-            const bot = params.get("bot");
-            const botHash = params.get("botHash");
-            const user = Telegram.WebApp.initDataUnsafe.user;
-            const userId = user?.id;
-            
-            // Get fingerprint
-            const fp = await FingerprintJS.load();
-            const result = await fp.get();
-            const fingerprint = result.visitorId || user?.id;
-
-            // Get references to UI elements
-            const progressScreen = document.querySelector('.progress-screen');
-            const successScreen = document.getElementById('successScreen');
-            const cancelScreen = document.querySelector('.cancel-screen');
-            const errorMessageEl = document.getElementById('errorMessage');
-            const successTitle = document.getElementById('successTitle');
-            const successMessage = document.getElementById('successMessage');
-            const continueBtn = document.getElementById('continueBtn');
-            const tryAgainBtn = document.getElementById('tryAgainBtn');
-            // developer @IncomeTeamAdmin 
-            // Check for required parameters
-            if (!userId || !bot || !botHash) {
-                showError("Verification Failed");
-                return;
+            // Initialize Telegram Web App
+            if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.ready();
+                window.Telegram.WebApp.expand();
+                window.Telegram.WebApp.setHeaderColor('#1e3c72');
+                window.Telegram.WebApp.setBackgroundColor('#1e3c72');
             }
-            // developer @IncomeTeamAdmin 
-            // Perform device verification after a short delay (for the animation)
-            setTimeout(async () => {
-                try {
-                    const fp = await FingerprintJS.load();
-                    const result = await fp.get();
 
-                    const verificationData = {
-                        user_id: userId,
-                        bot: bot,
-                        bot_hash: botHash,
-                        device_id: result.visitorId,
-                        user_agent: navigator.userAgent,
-                        platform: navigator.platform,
-                        language: navigator.language,
-                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                        hardware_concurrency: navigator.hardwareConcurrency,
-                        device_memory: navigator.deviceMemory || "unknown",
-                        screen_resolution: `${fingerprint}x${screen.width}x${screen.height}`
-                    };
-
-                    const res = await fetch("process.php", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(verificationData)
-                    });
-                    
-                    const json = await res.json();
-
-                    if (json.status === "continue") {
-                        // Customize the success screen for "continue" status
-                        document.querySelector('.success-image').src = "https://i.ibb.co.com/GQckqgMW/1000008941-removebg-preview.png";
-                        successTitle.textContent = "You're Already Verified";
-                        successMessage.textContent = "Your account is already verified";
-                        
-                        progressScreen.classList.remove('active');
-                        successScreen.classList.add('active');
-                        
-                        continueBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            Telegram.WebApp.close();
-                        });
-                    } 
-                    else if (json.attempt !== null && json.attempt > 0) {
-                        document.querySelector('.success-image').src = "https://i.ibb.co.com/GQckqgMW/1000008941-removebg-preview.png";
-                        successTitle.textContent = "You're Already Verified";
-                        successMessage.textContent = "Your account is already verified";
-                        
-                        progressScreen.classList.remove('active');
-                        successScreen.classList.add('active');
-                        
-                        continueBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            Telegram.WebApp.close();
-                        });
-                    } 
-                    else if (json.status === "success") {
-                        // Default success screen
-                        successTitle.textContent = "Verification Successful";
-                        successMessage.textContent = "Your device has been verified";
-                        
-                        progressScreen.classList.remove('active');
-                        successScreen.classList.add('active');
-                        
-                        continueBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            Telegram.WebApp.close();
-                        });
-                    } 
-                    else {
-                        showError("This Device Is Already Verified", json);
-                    }
-                } catch (err) {
-                    showError("Error during verification: " + err.message);
+            // Start loading message rotation
+            let messageIndex = 0;
+            const messageInterval = setInterval(() => {
+                if (currentScreen === 'loading' && messageIndex < loadingMessages.length) {
+                    document.getElementById('loadingMessage').textContent = loadingMessages[messageIndex];
+                    messageIndex++;
+                } else {
+                    clearInterval(messageInterval);
                 }
-            }, 2500);
+            }, 800);
 
-            function showError(message) {
-                progressScreen.classList.remove('active');
-                cancelScreen.classList.add('active');
-                errorMessageEl.textContent = message;
-                
-                tryAgainBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    if (window.Telegram?.WebApp) {
-                        window.Telegram.WebApp.close();
-                    } else {
-                        window.close();
-                    }
-                    // developer @IncomeTeamAdmin 
-                    //window.location.reload();
-                });
-            }
+            // Start verification process
+            setTimeout(async () => {
+                await startVerification();
+            }, 2500);
         });
+
+        async function startVerification() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const bot = params.get("bot");
+                const botHash = params.get("botHash");
+                const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
+                const userId = user?.id?.toString();
+
+                if (!userId || !bot || !botHash) {
+                    throw new Error("Missing required verification parameters");
+                }
+
+                // Load FingerprintJS
+                const FingerprintJS = window.FingerprintJS;
+                if (!FingerprintJS) {
+                    throw new Error("FingerprintJS not loaded");
+                }
+
+                const fp = await FingerprintJS.load();
+                const result = await fp.get();
+
+                const verificationData = {
+                    user_id: userId,
+                    bot: bot,
+                    bot_hash: botHash,
+                    device_id: result.visitorId,
+                    user_agent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    hardware_concurrency: navigator.hardwareConcurrency,
+                    device_memory: navigator.deviceMemory?.toString() || "unknown",
+                    screen_resolution: `${result.visitorId}x${screen.width}x${screen.height}`,
+                    timestamp: new Date().toISOString()
+                };
+
+                // Send verification request to backend
+                const response = await fetch(`${BACKEND_URL}/api/verify`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(verificationData)
+                });
+
+                const resultData = await response.json();
+
+                if (resultData.status === "continue" || (resultData.attempt !== null && resultData.attempt > 0)) {
+                    showScreen('already-verified');
+                } else if (resultData.status === "success") {
+                    showScreen('success');
+                } else {
+                    throw new Error(resultData.message || "Verification failed");
+                }
+
+            } catch (error) {
+                console.error('Verification error:', error);
+                document.getElementById('errorMessage').textContent = error.message || "An unexpected error occurred during verification.";
+                showScreen('error');
+            }
+        }
+
+        function showScreen(screenName) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+
+            // Show target screen
+            const targetScreen = document.querySelector(`.${screenName}-screen`);
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+                currentScreen = screenName;
+            }
+        }
+
+        function closeTelegramWebApp() {
+            if (window.Telegram?.WebApp) {
+                window.Telegram.WebApp.close();
+            } else {
+                window.close();
+            }
+        }
+
+        function retryVerification() {
+            showScreen('loading');
+            document.getElementById('loadingMessage').textContent = loadingMessages[0];
+            setTimeout(async () => {
+                await startVerification();
+            }, 1000);
+        }
     </script>
 </body>
 </html>
