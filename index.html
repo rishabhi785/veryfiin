@@ -1,116 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>🔒 Device Verification</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap">
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(to right, #141E30, #243B55);
-      color: white;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      overflow: hidden;
-    }
-
-    .container {
-      background-color: rgba(255, 255, 255, 0.05);
-      padding: 2rem 3rem;
-      border-radius: 20px;
-      text-align: center;
-      box-shadow: 0 0 25px rgba(0, 0, 0, 0.3);
-      animation: fadeIn 1s ease-in-out;
-    }
-
-    h1 {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-      color: #00ffd5;
-    }
-
-    p {
-      font-size: 1rem;
-      margin-bottom: 2rem;
-    }
-
-    button {
-      padding: 0.8rem 2rem;
-      font-size: 1rem;
-      font-weight: bold;
-      border: none;
-      border-radius: 30px;
-      background: linear-gradient(to right, #00ffd5, #0083ff);
-      color: #000;
-      cursor: pointer;
-      transition: all 0.3s ease;
-    }
-
-    button:hover {
-      transform: scale(1.05);
-      box-shadow: 0 0 20px #00ffd5;
-    }
-
-    @keyframes fadeIn {
-      from {opacity: 0; transform: translateY(-30px);}
-      to {opacity: 1; transform: translateY(0);}
-    }
-
-    #status {
-      margin-top: 1rem;
-      font-size: 1rem;
-      color: #00ffd5;
-    }
-  </style>
+    <title>Device Verification</title>
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 </head>
 <body>
-  <div class="container">
-    <h1>🔒 Device Verification</h1>
-    <p>Click below to verify your device for <strong>Telegram bot access</strong>.</p>
-    <button onclick="verify()">✅ Verify Now</button>
-    <div id="status"></div>
-  </div>
+    <h1>Device Verification</h1>
+    <p>Please wait while we verify your device...</p>
 
-  <script>
-    async function verify() {
-      const status = document.getElementById('status');
-      status.textContent = "⏳ Verifying device...";
-      
-      const fingerprint = btoa(navigator.userAgent + navigator.platform + screen.width + screen.height + navigator.language);
-
-      const urlParams = new URLSearchParams(window.location.search);
-      const telegram_id = urlParams.get("id");
-
-      if (!telegram_id) {
-        status.textContent = "❌ Telegram ID not found. Open this page using the Verify button in the bot.";
-        return;
-      }
-
-      try {
-        const res = await fetch("https://a7d25432fd3541e18d41cbadef507ad3.pella.app/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            telegram_id: telegram_id,
-            fingerprint: fingerprint
-          })
-        });
-
-        const data = await res.json();
-        if (data.status === "ok") {
-          status.textContent = "✅ Device verified successfully!";
-        } else {
-          status.textContent = "❌ Device already used with another account.";
-        }
-      } catch (e) {
-        console.error(e);
-        status.textContent = "⚠️ Error contacting the server.";
-      }
-    }
-  </script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const userId = urlParams.get('user_id');
+        
+        // Get fingerprint
+        FingerprintJS.load()
+            .then(fp => fp.get())
+            .then(result => {
+                const fingerprint = result.visitorId;
+                
+                // Send to backend
+                fetch('https://your-flask-backend.herokuapp.com/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        user_id: userId,
+                        fingerprint: fingerprint
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if(data.success) {
+                        alert("Device verified successfully!");
+                        // Close the window after 2 seconds
+                        setTimeout(() => window.close(), 2000);
+                    }
+                });
+            });
+    </script>
 </body>
 </html>
