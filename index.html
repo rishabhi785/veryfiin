@@ -3,40 +3,56 @@
 <head>
     <title>Device Verification</title>
     <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+        #status { margin-top: 20px; font-weight: bold; }
+    </style>
 </head>
 <body>
     <h1>Device Verification</h1>
-    <p>Please wait while we verify your device...</p>
+    <div id="status">Checking your device...</div>
 
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const userId = urlParams.get('user_id');
-        
-        // Get fingerprint
+        const statusEl = document.getElementById('status');
+
+        if (!userId) {
+            statusEl.innerText = "❌ Error: User ID missing";
+            throw new Error("User ID not found in URL");
+        }
+
+        // Collect fingerprint
         FingerprintJS.load()
             .then(fp => fp.get())
             .then(result => {
-                const fingerprint = result.visitorId;
-                
-                // Send to backend
-                fetch('https://your-flask-backend.herokuapp.com/verify', {
+                statusEl.innerText = "Sending data to server...";
+                return fetch('https://your-flask-backend.herokuapp.com/verify', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
                         user_id: userId,
-                        fingerprint: fingerprint
+                        fingerprint: result.visitorId,
+                        device_info: {
+                            os: navigator.platform,
+                            screen: `${screen.width}x${screen.height}`,
+                            browser: navigator.userAgent
+                        }
                     })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if(data.success) {
-                        alert("Device verified successfully!");
-                        // Close the window after 2 seconds
-                        setTimeout(() => window.close(), 2000);
-                    }
                 });
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusEl.innerText = "✅ Verification Successful!";
+                    setTimeout(() => window.close(), 2000);
+                } else {
+                    statusEl.innerText = "❌ Failed: " + (data.error || "Unknown error");
+                }
+            })
+            .catch(error => {
+                statusEl.innerText = "⚠️ Error: " + error.message;
+                console.error(error);
             });
     </script>
 </body>
