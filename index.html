@@ -1,90 +1,656 @@
+mujhe device verification system banana he bot ke liye eske jesa lekin python use kerke
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Device Verification</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: #121212;
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      text-align: center;
-      flex-direction: column;
-    }
-    .status {
-      font-size: 1.4rem;
-      margin-top: 1rem;
-    }
-    .success {
-      color: #00ff8c;
-      animation: bounce 1s infinite alternate;
-    }
-    .fail {
-      color: #ff4b4b;
-      animation: shake 0.5s infinite alternate;
-    }
-    @keyframes bounce {
-      from { transform: translateY(0); }
-      to { transform: translateY(-10px); }
-    }
-    @keyframes shake {
-      from { transform: translateX(-5px); }
-      to { transform: translateX(5px); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Verification</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #121a23; /* Dark background */
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            text-align: center;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .loader-container {
+            width: 120px;
+            height: 120px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin: 10px 0 5px;
+        }
+
+        .progress-bar {
+            width: 80%;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 15px auto;
+        }
+
+        .progress {
+            height: 100%;
+            width: 0;
+            background: #3a9bdc; /* Matching blue */
+            animation: progressAnim 3s linear forwards;
+        }
+
+        @keyframes progressAnim {
+            0% { width: 0; }
+            100% { width: 100%; }
+        }
+
+        .message {
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        .screen {
+            display: none; /* Hide all screens by default */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100%;
+        }
+
+        .active {
+            display: flex; /* Show only the active screen */
+        }
+
+        .button {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 12px 25px;
+            background-color: #3a9bdc; /* Same blue as logo */
+            color: #fff;
+            text-decoration: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            transition: 0.3s ease;
+        }
+
+        .button:hover {
+            background-color: #2c7fb3; /* Darker blue on hover */
+        }
+
+        .button-cancel {
+            background-color: #dc3a3a; /* Red color for cancel */
+        }
+
+        .button-cancel:hover {
+            background-color: #b32c2c; /* Darker red on hover */
+        }
+
+        /* Device loader styles */
+        .device {
+            position: relative;
+            width: 4em;
+            height: 4em;
+            transform: scale(1.5);
+        }
+        .device__a, .device__a-1, .device__a-2, .device__b, .device__c, .device__d, .device__e, .device__f, .device__g {
+            animation: device-a 3s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+            position: absolute;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .device__a, .device__d, .device__e {
+            background-color: hsl(223, 10%, 70%);
+            box-shadow: 0 0 0 0.25em inset hsl(223, 10%, 90%);
+        }
+        .device__a {
+            border-radius: 0.375em;
+            top: 0;
+            width: 4em;
+            height: 2.5em;
+            z-index: 1;
+        }
+        .device__a-1, .device__a-2 {
+            visibility: hidden;
+        }
+        .device__a-1 {
+            animation-name: device-a-1;
+            top: 2.25em;
+            left: 1.5em;
+            width: 1em;
+            height: 0.25em;
+        }
+        .device__a-2 {
+            animation-name: device-a-2;
+            top: 0.625em;
+            right: 0;
+            width: 0.25em;
+            height: 0.75em;
+        }
+        .device__a-1, .device__a-2, .device__b, .device__c, .device__f, .device__g {
+            background-color: hsl(223, 10%, 90%);
+            border-radius: 0.125em;
+        }
+        .device__b {
+            animation-name: device-b;
+            top: 2.25em;
+            left: 1.875em;
+            width: 0.25em;
+            height: 1em;
+        }
+        .device__c {
+            animation-name: device-c;
+            top: 3em;
+            left: 1em;
+            width: 2em;
+            height: 0.25em;
+        }
+        .device__d, .device__e {
+            left: 1.25em;
+            width: 1.5em;
+            height: 0.875em;
+            visibility: hidden;
+        }
+        .device__d {
+            animation-name: device-d;
+            border-radius: 0.375em 0.375em 0 0;
+            top: 0.75em;
+        }
+        .device__e {
+            animation-name: device-e;
+            border-radius: 0 0 0.375em 0.375em;
+            top: 1.625em;
+        }
+        .device__f, .device__g {
+            filter: blur(0.375em);
+            bottom: 0;
+            height: 0.25em;
+        }
+        .device__f {
+            animation-name: device-f;
+            opacity: 0.5;
+            left: 1em;
+            width: 2em;
+        }
+        .device__g {
+            animation-name: device-g;
+            opacity: 0;
+            left: 0;
+            width: 4em;
+        }
+
+        /* Success and cancel image styles */
+        .success-image, .cancel-image {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+            margin-bottom: 20px;
+        }
+
+        /* Animations */
+        @keyframes device-a {
+            from, to {
+                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
+                left: 0;
+                width: 4em;
+                height: 2.5em;
+                transform: translateY(0);
+            }
+            12.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                left: 0;
+                width: 4em;
+                height: 2.5em;
+                transform: translateY(1.5em);
+            }
+            25% {
+                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
+                left: 0;
+                width: 4em;
+                height: 2.5em;
+                transform: translateY(0.375em);
+            }
+            37.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                left: 0;
+                width: 4em;
+                height: 2.5em;
+                transform: translateY(1.5em);
+            }
+            50% {
+                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
+                left: 1em;
+                width: 2em;
+                height: 3em;
+                transform: translateY(0.125em);
+            }
+            62.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                left: 1em;
+                width: 2em;
+                height: 3em;
+                transform: translateY(1em);
+            }
+            75% {
+                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
+                left: 1em;
+                width: 2em;
+                height: 2em;
+                transform: translateY(0.625em);
+            }
+            87.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                left: 1em;
+                width: 2em;
+                height: 2em;
+                transform: translateY(1.375em);
+            }
+        }
+        @keyframes device-a-1 {
+            from {
+                animation-timing-function: steps(1, end);
+                left: 1.5em;
+                width: 1em;
+                transform: translateY(0);
+                visibility: hidden;
+            }
+            12.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                left: 1.5em;
+                width: 1em;
+                transform: translateY(0);
+                visibility: visible;
+            }
+            25%, 37.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                left: 1.5em;
+                width: 1em;
+                transform: translateY(-0.5em);
+                visibility: visible;
+            }
+            50%, 62.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                left: 0.875em;
+                width: 0.25em;
+                transform: translateY(0);
+                visibility: visible;
+            }
+            75%, to {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                left: 0.875em;
+                width: 0.25em;
+                transform: translateY(-0.5em);
+                visibility: hidden;
+            }
+        }
+        @keyframes device-a-2 {
+            from {
+                animation-timing-function: steps(1, end);
+                transform: translate(0, 0.375em);
+                visibility: hidden;
+            }
+            62.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                transform: translate(0, 0.375em);
+                visibility: visible;
+            }
+            75%, 87.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                transform: translate(0.375em, 0);
+                visibility: visible;
+            }
+            to {
+                transform: translate(0, 0.25em);
+                visibility: visible;
+            }
+        }
+        @keyframes device-b {
+            from, to {
+                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
+                transform: translateY(0);
+                visibility: visible;
+            }
+            10%, 12.5% {
+                animation-timing-function: steps(1, start);
+                transform: translateY(0.75em);
+                visibility: visible;
+            }
+            25% {
+                animation-timing-function: steps(1, start);
+                top: 2.25em;
+                left: 1.875em;
+                transform: translateY(0.75em);
+                visibility: hidden;
+            }
+            87.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                transform: translateY(0.75em);
+                visibility: hidden;
+            }
+        }
+        @keyframes device-c {
+            from, to {
+                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
+                transform: translateY(0);
+                visibility: visible;
+                width: 2em;
+            }
+            10%, 12.5% {
+                animation-timing-function: steps(1, start);
+                transform: translateY(0.75em);
+                visibility: visible;
+                width: 2em;
+            }
+            25% {
+                animation-timing-function: steps(1, start);
+                top: 3em;
+                left: 1em;
+                width: 2em;
+                transform: translateY(0.75em);
+                visibility: hidden;
+                width: 2em;
+            }
+            87.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                left: 1.5em;
+                transform: translateY(0.75em);
+                visibility: hidden;
+                width: 1em;
+            }
+        }
+        @keyframes device-d {
+            from {
+                animation-timing-function: steps(1, end);
+                transform: translateY(0.25em);
+                visibility: hidden;
+            }
+            62.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                transform: translateY(0.25em);
+                visibility: visible;
+            }
+            75% {
+                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
+                transform: translateY(-0.75em);
+            }
+            87.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                transform: translateY(0);
+            }
+            to {
+                transform: translateY(-0.75em);
+            }
+        }
+        @keyframes device-e {
+            from {
+                animation-timing-function: steps(1, end);
+                transform: translateY(1.5em);
+                visibility: hidden;
+            }
+            62.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                transform: translateY(1.5em);
+                visibility: visible;
+            }
+            75% {
+                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
+                transform: translateY(0.75em);
+            }
+            87.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                transform: translateY(1.5em);
+            }
+            to {
+                transform: translateY(0);
+            }
+        }
+        @keyframes device-f {
+            from {
+                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
+                filter: blur(0.375em);
+            }
+            12.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                filter: blur(0.1875em);
+                opacity: 0.5;
+            }
+            25%, to {
+                filter: blur(0.375em);
+                opacity: 0;
+            }
+        }
+        @keyframes device-g {
+            from, 12.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                background-color: hsl(223, 10%, 90%);
+                filter: blur(0.1875em);
+                opacity: 0;
+            }
+            25% {
+                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
+                background-color: hsl(223, 10%, 90%);
+                filter: blur(0.375em);
+                opacity: 0.5;
+            }
+            37.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                filter: blur(0.1875em);
+                opacity: 0.5;
+                left: 0;
+                width: 4em;
+            }
+            50%, 75%, to {
+                animation-timing-function: cubic-bezier(0.33, 0, 0.67, 0);
+                filter: blur(0.375em);
+                opacity: 0.5;
+                left: 1em;
+                width: 2em;
+            }
+            62.5%, 87.5% {
+                animation-timing-function: cubic-bezier(0.33, 1, 0.67, 1);
+                filter: blur(0.1875em);
+                opacity: 0.5;
+                left: 1em;
+                width: 2em;
+            }
+        }
+    </style>
 </head>
+
 <body>
-  <h1 id="emoji">🔐 Scanning Device...</h1>
-  <p class="status" id="statusText">Please wait while we verify your device.</p>
+    <!-- First Page (Loading) -->
+    <div class="screen progress-screen active">
+        <div class="container">
+            <div class="loader-container">
+                <div class="device">
+                    <div class="device__a">
+                        <div class="device__a-1"></div>
+                        <div class="device__a-2"></div>
+                    </div>
+                    <div class="device__b"></div>
+                    <div class="device__c"></div>
+                    <div class="device__d"></div>
+                    <div class="device__e"></div>
+                    <div class="device__f"></div>
+                    <div class="device__g"></div>
+                </div>
+            </div>
+            <h1>Device Verification</h1>
+            <div class="progress-bar">
+                <div class="progress"></div>
+            </div>
+            <div class="message">Scanning your device...</div>
+        </div>
+    </div>
 
-  <script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+    <!-- Second Page (Success) -->
+    <div class="screen success-screen" id="successScreen">
+        <div class="container">
+            <div class="loader-container">
+                <img src="https://i.ibb.co.com/9HK2bk1t/1000004210-removebg-preview.png" alt="Success" class="success-image">
+            </div>
+            <h1>Device Verification</h1>
+            <p id="successTitle">Verification Successful</p>
+            <div class="message" id="successMessage">Your device has been verified.</div>
+            <a href="#" class="button" id="continueBtn">Continue to Bot</a>
+        </div>
+    </div>
 
-    FingerprintJS.load().then(fp => {
-      fp.get().then(result => {
-        const visitorId = result.visitorId;
-        fetch("http://brownglider.onpella.app/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user_id: tg.initDataUnsafe.user?.id,
-            fingerprint: visitorId
-          })
-        })
-        .then(res => res.json())
-        .then(data => {
-          const emoji = document.getElementById('emoji');
-          const statusText = document.getElementById('statusText');
-          if (data.status === "success") {
-            emoji.textContent = "✅ Verified";
-            statusText.textContent = "Your device has been verified!";
-            statusText.className = "status success";
-            tg.showAlert("✅ Verification Successful");
-          } else {
-            emoji.textContent = "❌ Blocked";
-            statusText.textContent = data.message || "Device already used!";
-            statusText.className = "status fail";
-            tg.showAlert("🚫 " + data.message);
-          }
-        })
-        .catch(err => {
-          document.getElementById('emoji').textContent = "⚠️";
-          document.getElementById('statusText').textContent = "Something went wrong. Try again.";
-          document.getElementById('statusText').className = "status fail";
-          tg.showAlert("❌ Network or backend error");
+    <!-- Third Page (Cancel) -->
+    <div class="screen cancel-screen">
+        <div class="container">
+            <div class="loader-container">
+                <img src="https://i.ibb.co/sJyRRXHk/1000004216-removebg-preview.png" alt="Cancel" class="cancel-image">
+            </div>
+            <h1>Device Verification</h1>
+            <p>Verification Failed</p>
+            <div class="message" id="errorMessage">The verification process was interrupted.</div>
+            <a href="#" class="button button-cancel" id="tryAgainBtn">Continue To Bot</a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async function() {
+            const params = new URLSearchParams(window.location.search);
+            const bot = params.get("bot");
+            const botHash = params.get("botHash");
+            const user = Telegram.WebApp.initDataUnsafe.user;
+            const userId = user?.id;
+            
+            // Get fingerprint
+            const fp = await FingerprintJS.load();
+            const result = await fp.get();
+            const fingerprint = result.visitorId || user?.id;
+
+            // Get references to UI elements
+            const progressScreen = document.querySelector('.progress-screen');
+            const successScreen = document.getElementById('successScreen');
+            const cancelScreen = document.querySelector('.cancel-screen');
+            const errorMessageEl = document.getElementById('errorMessage');
+            const successTitle = document.getElementById('successTitle');
+            const successMessage = document.getElementById('successMessage');
+            const continueBtn = document.getElementById('continueBtn');
+            const tryAgainBtn = document.getElementById('tryAgainBtn');
+            // developer @IncomeTeamAdmin 
+            // Check for required parameters
+            if (!userId || !bot || !botHash) {
+                showError("Verification Failed");
+                return;
+            }
+            // developer @IncomeTeamAdmin 
+            // Perform device verification after a short delay (for the animation)
+            setTimeout(async () => {
+                try {
+                    const fp = await FingerprintJS.load();
+                    const result = await fp.get();
+
+                    const verificationData = {
+                        user_id: userId,
+                        bot: bot,
+                        bot_hash: botHash,
+                        device_id: result.visitorId,
+                        user_agent: navigator.userAgent,
+                        platform: navigator.platform,
+                        language: navigator.language,
+                        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                        hardware_concurrency: navigator.hardwareConcurrency,
+                        device_memory: navigator.deviceMemory || "unknown",
+                        screen_resolution: `${fingerprint}x${screen.width}x${screen.height}`
+                    };
+
+                    const res = await fetch("process.php", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(verificationData)
+                    });
+                    
+                    const json = await res.json();
+
+                    if (json.status === "continue") {
+                        // Customize the success screen for "continue" status
+                        document.querySelector('.success-image').src = "https://i.ibb.co.com/GQckqgMW/1000008941-removebg-preview.png";
+                        successTitle.textContent = "You're Already Verified";
+                        successMessage.textContent = "Your account is already verified";
+                        
+                        progressScreen.classList.remove('active');
+                        successScreen.classList.add('active');
+                        
+                        continueBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            Telegram.WebApp.close();
+                        });
+                    } 
+                    else if (json.attempt !== null && json.attempt > 0) {
+                        document.querySelector('.success-image').src = "https://i.ibb.co.com/GQckqgMW/1000008941-removebg-preview.png";
+                        successTitle.textContent = "You're Already Verified";
+                        successMessage.textContent = "Your account is already verified";
+                        
+                        progressScreen.classList.remove('active');
+                        successScreen.classList.add('active');
+                        
+                        continueBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            Telegram.WebApp.close();
+                        });
+                    } 
+                    else if (json.status === "success") {
+                        // Default success screen
+                        successTitle.textContent = "Verification Successful";
+                        successMessage.textContent = "Your device has been verified";
+                        
+                        progressScreen.classList.remove('active');
+                        successScreen.classList.add('active');
+                        
+                        continueBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            Telegram.WebApp.close();
+                        });
+                    } 
+                    else {
+                        showError("This Device Is Already Verified", json);
+                    }
+                } catch (err) {
+                    showError("Error during verification: " + err.message);
+                }
+            }, 2500);
+
+            function showError(message) {
+                progressScreen.classList.remove('active');
+                cancelScreen.classList.add('active');
+                errorMessageEl.textContent = message;
+                
+                tryAgainBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (window.Telegram?.WebApp) {
+                        window.Telegram.WebApp.close();
+                    } else {
+                        window.close();
+                    }
+                    // developer @IncomeTeamAdmin 
+                    //window.location.reload();
+                });
+            }
         });
-      });
-    });
-  </script>
+    </script>
 </body>
 </html>
