@@ -341,9 +341,6 @@
     </div>
 
     <script>
-        // Configuration - Replace with your backend URL
-        const BACKEND_URL = 'https://your-backend-domain.com'; // Change this to your Pella.app backend URL
-        
         let currentScreen = 'loading';
         const loadingMessages = [
             'Scanning your device...',
@@ -380,63 +377,67 @@
 
         async function startVerification() {
             try {
+                // Simulate collecting verification data for visual effect
                 const params = new URLSearchParams(window.location.search);
                 const bot = params.get("bot");
                 const botHash = params.get("botHash");
                 const user = window.Telegram?.WebApp?.initDataUnsafe?.user;
                 const userId = user?.id?.toString();
 
-                if (!userId || !bot || !botHash) {
-                    throw new Error("Missing required verification parameters");
+                // Simulate device fingerprinting for visual effect
+                let deviceId = "simulated_device_id";
+                try {
+                    // Load FingerprintJS for cosmetic purposes only
+                    const FingerprintJS = window.FingerprintJS;
+                    if (FingerprintJS) {
+                        const fp = await FingerprintJS.load();
+                        const result = await fp.get();
+                        deviceId = result.visitorId;
+                    }
+                } catch (error) {
+                    console.log('FingerprintJS simulation failed, using fallback');
                 }
 
-                // Load FingerprintJS
-                const FingerprintJS = window.FingerprintJS;
-                if (!FingerprintJS) {
-                    throw new Error("FingerprintJS not loaded");
-                }
-
-                const fp = await FingerprintJS.load();
-                const result = await fp.get();
-
+                // Simulate verification data collection (for demonstration)
                 const verificationData = {
-                    user_id: userId,
-                    bot: bot,
-                    bot_hash: botHash,
-                    device_id: result.visitorId,
+                    user_id: userId || "demo_user",
+                    bot: bot || "demo_bot",
+                    bot_hash: botHash || "demo_hash",
+                    device_id: deviceId,
                     user_agent: navigator.userAgent,
                     platform: navigator.platform,
                     language: navigator.language,
                     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
                     hardware_concurrency: navigator.hardwareConcurrency,
                     device_memory: navigator.deviceMemory?.toString() || "unknown",
-                    screen_resolution: `${result.visitorId}x${screen.width}x${screen.height}`,
+                    screen_resolution: `${screen.width}x${screen.height}`,
                     timestamp: new Date().toISOString()
                 };
 
-                // Send verification request to backend
-                const response = await fetch(`${BACKEND_URL}/api/verify`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(verificationData)
-                });
+                console.log('Simulated verification data:', verificationData);
 
-                const resultData = await response.json();
+                // Simulate a brief processing delay for realism
+                await new Promise(resolve => setTimeout(resolve, 1000));
 
-                if (resultData.status === "continue" || (resultData.attempt !== null && resultData.attempt > 0)) {
-                    showScreen('already-verified');
-                } else if (resultData.status === "success") {
-                    showScreen('success');
-                } else {
-                    throw new Error(resultData.message || "Verification failed");
-                }
+                // Always return successful verification
+                const simulatedResponse = {
+                    status: "success",
+                    message: "Device verification completed successfully",
+                    verified: true,
+                    device_id: deviceId,
+                    timestamp: new Date().toISOString()
+                };
+
+                console.log('Simulated verification response:', simulatedResponse);
+
+                // Show success screen
+                showScreen('success');
 
             } catch (error) {
-                console.error('Verification error:', error);
-                document.getElementById('errorMessage').textContent = error.message || "An unexpected error occurred during verification.";
-                showScreen('error');
+                console.error('Verification simulation error:', error);
+                // Even if there's an error in simulation, still show success
+                // since the requirement is to always show successful verification
+                showScreen('success');
             }
         }
 
@@ -458,6 +459,8 @@
             if (window.Telegram?.WebApp) {
                 window.Telegram.WebApp.close();
             } else {
+                // Fallback for testing outside Telegram
+                alert('Verification completed! In a real Telegram environment, this would close the web app.');
                 window.close();
             }
         }
@@ -465,10 +468,36 @@
         function retryVerification() {
             showScreen('loading');
             document.getElementById('loadingMessage').textContent = loadingMessages[0];
+            
+            // Reset progress animation
+            const progressBar = document.querySelector('.progress');
+            progressBar.style.animation = 'none';
+            progressBar.offsetHeight; // Trigger reflow
+            progressBar.style.animation = 'progressAnimation 3s ease-out forwards';
+            
             setTimeout(async () => {
                 await startVerification();
             }, 1000);
         }
+
+        // Additional functions for demonstration purposes
+        function simulateAlreadyVerified() {
+            showScreen('already-verified');
+        }
+
+        function simulateError() {
+            document.getElementById('errorMessage').textContent = "This is a simulated error for demonstration purposes.";
+            showScreen('error');
+        }
+
+        // Expose functions globally for debugging/testing
+        window.deviceVerification = {
+            showSuccess: () => showScreen('success'),
+            showAlreadyVerified: simulateAlreadyVerified,
+            showError: simulateError,
+            retry: retryVerification,
+            close: closeTelegramWebApp
+        };
     </script>
 </body>
 </html>
