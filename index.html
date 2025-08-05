@@ -1,1 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            max-width: 400px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+        
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        #continueBtn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        #continueBtn:hover {
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+        
+        #continueBtn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            display: none;
+            margin: 20px 0;
+        }
+        
+        .checkmark {
+            color: #28a745;
+            font-size: 24px;
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Verification Process</h1>
+        
+        <div class="step">
+            <span class="checkmark">✅</span>
+            Step 1: Channel & Group Membership Verified
+        </div>
+        
+        <div class="step">
+            <span class="checkmark">✅</span>
+            Step 2: Identity Verification Complete
+        </div>
+        
+        <div class="step">
+            <span class="checkmark">✅</span>
+            Step 3: Bot Access Granted
+        </div>
+        
+        <div class="loading" id="loading">
+            <p>Processing verification...</p>
+        </div>
+        
+        <button id="continueBtn" onclick="continueToBot()">
+            Continue Bot
+        </button>
+    </div>
 
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        // Initialize Telegram Web App
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        
+        // Set theme
+        tg.setBackgroundColor('#667eea');
+        tg.setHeaderColor('#667eea');
+        
+        function continueToBot() {
+            const btn = document.getElementById('continueBtn');
+            const loading = document.getElementById('loading');
+            
+            btn.disabled = true;
+            btn.textContent = 'Processing...';
+            loading.style.display = 'block';
+            
+            // Send data back to bot
+            const data = {
+                verified: true,
+                timestamp: Date.now(),
+                action: 'continue_to_bot'
+            };
+            
+            // Send data to the bot
+            tg.sendData(JSON.stringify(data));
+            
+            // Close the web app after a short delay
+            setTimeout(() => {
+                tg.close();
+            }, 1000);
+        }
+        
+        // Auto-enable continue button after 3 seconds (simulate verification time)
+        setTimeout(() => {
+            document.getElementById('continueBtn').disabled = false;
+        }, 3000);
+        
+        // Make continue button ready immediately for testing
+        document.getElementById('continueBtn').disabled = false;
+    </script>
+</body>
+</html>
