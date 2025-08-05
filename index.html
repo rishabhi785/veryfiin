@@ -4,150 +4,253 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verification</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
+        * {
             margin: 0;
-            padding: 20px;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            text-align: center;
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            color: white;
         }
-        
+
         .container {
+            text-align: center;
+            padding: 2rem;
             max-width: 400px;
-            padding: 30px;
+            width: 90%;
+        }
+
+        .verification-box {
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 15px;
+            border-radius: 20px;
+            padding: 2rem;
             backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
-        
+
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         h1 {
-            margin-bottom: 20px;
-            font-size: 24px;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
         }
-        
-        .step {
-            margin: 20px 0;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            font-size: 16px;
+
+        p {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+            opacity: 0.9;
+            line-height: 1.5;
         }
-        
-        #continueBtn {
-            background: #28a745;
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .continue-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
             color: white;
             border: none;
-            padding: 15px 30px;
+            padding: 1rem 2rem;
             border-radius: 25px;
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 1.1rem;
+            font-weight: 600;
             cursor: pointer;
-            margin-top: 20px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-        }
-        
-        #continueBtn:hover {
-            background: #218838;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
-        }
-        
-        #continueBtn:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .loading {
             display: none;
-            margin: 20px 0;
+            margin-top: 1rem;
+            width: 100%;
         }
-        
-        .checkmark {
-            color: #28a745;
-            font-size: 24px;
-            margin-right: 10px;
+
+        .continue-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+        }
+
+        .continue-btn:active {
+            transform: translateY(0);
+        }
+
+        .step {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .step:last-child {
+            border-bottom: none;
+        }
+
+        .step-text {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .check-mark {
+            color: #4CAF50;
+            font-size: 1.2rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .check-mark.visible {
+            opacity: 1;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .visible {
+            display: block;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🔐 Verification Process</h1>
-        
-        <div class="step">
-            <span class="checkmark">✅</span>
-            Step 1: Channel & Group Membership Verified
+        <div class="verification-box">
+            <div id="verification-screen">
+                <div class="icon">🔐</div>
+                <h1>Verification in Progress</h1>
+                <p>Please wait while we verify your account...</p>
+                
+                <div class="spinner"></div>
+                
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress"></div>
+                </div>
+
+                <div class="verification-steps">
+                    <div class="step">
+                        <span class="step-text">Checking membership status</span>
+                        <span class="check-mark" id="check1">✓</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-text">Validating user data</span>
+                        <span class="check-mark" id="check2">✓</span>
+                    </div>
+                    <div class="step">
+                        <span class="step-text">Completing verification</span>
+                        <span class="check-mark" id="check3">✓</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="success-screen" class="hidden">
+                <div class="icon">✅</div>
+                <h1>Verification Complete!</h1>
+                <p>Your account has been successfully verified. You can now access all bot features.</p>
+                
+                <button class="continue-btn" id="continueBtn">
+                    Continue to Bot
+                </button>
+            </div>
         </div>
-        
-        <div class="step">
-            <span class="checkmark">✅</span>
-            Step 2: Identity Verification Complete
-        </div>
-        
-        <div class="step">
-            <span class="checkmark">✅</span>
-            Step 3: Bot Access Granted
-        </div>
-        
-        <div class="loading" id="loading">
-            <p>Processing verification...</p>
-        </div>
-        
-        <button id="continueBtn" onclick="continueToBot()">
-            Continue Bot
-        </button>
     </div>
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         // Initialize Telegram Web App
-        let tg = window.Telegram.WebApp;
-        tg.expand();
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+
+        // Verification simulation
+        let progress = 0;
+        let currentStep = 0;
+        const steps = ['check1', 'check2', 'check3'];
         
-        // Set theme
-        tg.setBackgroundColor('#667eea');
-        tg.setHeaderColor('#667eea');
-        
-        function continueToBot() {
-            const btn = document.getElementById('continueBtn');
-            const loading = document.getElementById('loading');
+        function updateProgress() {
+            progress += Math.random() * 15 + 5;
+            if (progress > 100) progress = 100;
             
-            btn.disabled = true;
-            btn.textContent = 'Processing...';
-            loading.style.display = 'block';
+            document.getElementById('progress').style.width = progress + '%';
             
-            // Send data back to bot
-            const data = {
-                verified: true,
-                timestamp: Date.now(),
-                action: 'continue_to_bot'
-            };
+            // Show check marks progressively
+            const stepIndex = Math.floor((progress / 100) * steps.length);
+            if (stepIndex > currentStep && stepIndex <= steps.length) {
+                if (steps[currentStep]) {
+                    document.getElementById(steps[currentStep]).classList.add('visible');
+                }
+                currentStep = stepIndex;
+            }
             
-            // Send data to the bot
-            tg.sendData(JSON.stringify(data));
-            
-            // Close the web app after a short delay
-            setTimeout(() => {
-                tg.close();
-            }, 1000);
+            if (progress >= 100) {
+                setTimeout(showSuccessScreen, 500);
+            } else {
+                setTimeout(updateProgress, 300 + Math.random() * 400);
+            }
         }
-        
-        // Auto-enable continue button after 3 seconds (simulate verification time)
-        setTimeout(() => {
-            document.getElementById('continueBtn').disabled = false;
-        }, 3000);
-        
-        // Make continue button ready immediately for testing
-        document.getElementById('continueBtn').disabled = false;
+
+        function showSuccessScreen() {
+            document.getElementById('verification-screen').classList.add('hidden');
+            document.getElementById('success-screen').classList.remove('hidden');
+            document.getElementById('continueBtn').style.display = 'block';
+        }
+
+        // Start verification process
+        setTimeout(updateProgress, 1000);
+
+        // Handle continue button click
+        document.getElementById('continueBtn').addEventListener('click', function() {
+            // Send verification completion data to the bot
+            const verificationData = {
+                verified: true,
+                timestamp: new Date().toISOString(),
+                user_completed: true
+            };
+
+            // Send data back to Telegram bot
+            window.Telegram.WebApp.sendData(JSON.stringify(verificationData));
+        });
     </script>
 </body>
 </html>
